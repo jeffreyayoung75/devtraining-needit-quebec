@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[function($rootScope,$window,$timeout,KnowledgeSearchService,$scope) {
+	var c = this;
+
+
+	
+	c.keyword = c.data.keyword || "";
+	c.oldKeyword = c.data.keyword || "";
+	c.options.glyph = c.options.glyph || 'search';
+	c.filterCount =0;
+	c.applycolor =false;
+	c.items =[];
+	c.showLanguageIcon = false;
+	if($rootScope.showLanguageIcon){
+		c.showLanguageIcon = $rootScope.showLanguageIcon;
+	}
+	var qry;
+
+	//Subscribe search element to service on load
+	if(KnowledgeSearchService){
+		var input = {};
+		input.element = "search";
+		input.alt_url_params = c.options.alt_search_url_params;
+		KnowledgeSearchService.subscribe(input);
+	}
+	var refreshSearchFilter = $rootScope.$on('sp.kb.refresh.filter',function (event,data){
+		if(data){
+			c.items = data;
+		}
+		if(c.items.length>0){
+			c.filterCount = c.items.length;
+			c.applycolor = true;
+		}else{
+			c.filterCount = 0;
+			c.applycolor = false;
+		}
+	});
+
+
+	var refreshKeyword = $rootScope.$on('sp.kb.refresh.keyword',function(event,data){
+		if(data)
+			c.keyword = data.keyword;				 
+	});
+	
+	$scope.$on('$destroy',function(){
+		refreshSearchFilter();
+		refreshKeyword();
+	});
+	
+	
+	
+}]]></client_script>
+        <controller_as>c</controller_as>
+        <css>.kb-search-block{
+  padding : 8px 0px 10px 0px;
+}
+input[type='text']{
+  height: 2.4em;
+}
+button{
+  height: inherit;
+  font-size: 14px; 
+}
+.filter-icon{
+    display: inline-flex;
+    padding-top: 9px;
+  	padding-left:5px;
+}
+.filter-size{
+	font-size: 18px;
+}
+.selected-filter-color{
+	color :$link-color;
+}
+.filter-color{
+	color: $text-color;
+}
+.check-position {
+	  font-size: 10px;
+    padding-top: 6px;
+    margin-left: -5px;
+}
+.no-pad {
+	padding-left :0px !important;
+  padding-right : 0px !important;
+}
+.pad-bottom {
+	padding-bottom : 10px;
+}
+.icon-padding {
+ padding-top : 9px;
+ padding-right : 5px;
+}
+.filter-class{
+	padding-bottom: 9px;
+  padding-top: 3px;
+  font-size : 16px;
+}
+.filter-text{
+	padding-left :7px;
+}</css>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list>title,glyph,color,size,css</field_list>
+        <has_preview>false</has_preview>
+        <id>needit_search</id>
+        <internal>false</internal>
+        <link><![CDATA[function(scope,element,attr){
+	if(scope.data.set_foccus)
+	setTimeout(function(){
+		element.find('#kb_search_input').focus();
+	},0);
+	
+	var c = scope.c;
+	$rootScope = $injector.get("$rootScope");
+	
+	c.showFiltersButton = true;
+	
+	c.showAndHideFilters = function(){
+		if(c.showFiltersButton==true){
+			$(".hide-filters").addClass("show-filters").removeClass("hide-filters");
+			$(".expand-width").addClass("original-width").removeClass("expand-width");
+			c.showFiltersButton = false;
+		}else{
+			$(".show-filters").addClass("hide-filters").removeClass("show-filters");
+			$(".original-width").addClass("expand-width").removeClass("original-width");
+			c.showFiltersButton = true;
+		}
+	}
+	
+	c.hideFilters = function(){
+	  $(".show-filters").addClass("hide-filters").removeClass("show-filters");
+		$(".original-width").addClass("expand-width").removeClass("original-width");
+		c.showFiltersButton = true;
+	}
+	
+	c.toggleFacets = function(){
+		$rootScope.showFacet = !$rootScope.showFacet;
+		$rootScope.showLanguageFacet = false;
+	}
+	
+	c.showLanguageFacet = function(){
+		$rootScope.showFacet = !$rootScope.showFacet;
+		$rootScope.showLanguageFacet = true;
+	}
+	
+	c.keywordChanged = function(event){
+		c.keyword = c.keyword.trim();
+
+		if(c.keyword != c.oldKeyword){
+			//handle keyboard events for enter and keyup
+			if(event){
+				var keycode = (event.keyCode ? event.keyCode : event.which);
+				if(!c.data.allow_instant_search && keycode != 13)
+					return;
+			}
+
+			//throw update event based on options			
+			if( (c.data.allow_empty_search && c.keyword == "") || (c.keyword && c.keyword.length >= c.data.min_search_char)){
+				$rootScope.$emit('sp.kb.updated.keyword',{'keyword':c.keyword});
+				c.hideFilters();
+			}
+
+			c.oldKeyword = angular.copy(c.keyword);
+		}
+
+		scope.$evalAsync(function(){
+			if($("#kb_search_input"))
+				$("#kb_search_input").focus();
+		});
+	};
+
+	//If instant search enable then wait for 200ms for the next input then throw event
+	$("#kb_search_input").keyup(_.debounce(function(event){
+		c.keywordChanged(event);
+	},c.options.search_wait));
+
+	$(window).resize(function() {
+		var width1 = $(window).width();
+		if(width1<=992 && !$rootScope.isMobile){
+			$rootScope.isMobile = true;
+		}else if(width1>992 && $rootScope.isMobile ){
+			$rootScope.showFacet = false;
+			$rootScope.isMobile = false;
+		}
+	});
+	
+	//set keyword onload from url and throw event
+	if(c.data.keyword){
+		c.keyword = c.data.keyword;
+		c.keywordChanged();
+	}
+}]]></link>
+        <name>NeedIt Search</name>
+        <option_schema>[{"hint":"Allow search with empty or blank string in search box (Default to system property : glide.knowman.allow_empty_search)","name":"allow_empty_search","default_value":"Use system property","label":"Allow Empty Search","type":"choice","choices":[{"label":"Yes","value":"Yes"},{"label":"No","value":"No"},{"label":"Use system property","value":"Use system property"}]},{"hint":"Allow search on typeahead (Default to system property : glide.knowman.search.instant_results)","name":"allow_instant_search","default_value":"Use system property","label":"Allow Instant Search On Keypress","type":"choice","choices":[{"label":"Yes","value":"Yes"},{"label":"No","value":"No"},{"label":"Use system property","value":"Use system property"}]},{"hint":"Minimum number of characters for search (Default to system property : glide.knowman.search_character_limit)","name":"min_search_char","default_value":"","label":"Minimum Number of Characters for Search","type":"string"},{"hint":"Wait time between searches, if typeahead search is enabled","name":"search_wait","default_value":"500","label":"Wait time(ms) between searches, if instant search is enabled","type":"integer"},{"hint":"Comma separated list of alternate URL parameters for Search input (Default is only query)","name":"alt_search_url_params","label":"Alternate URL Parameters for Search","type":"string"},{"hint":"Comma separated list of alternate URL parameters for language input (Default is only language)","name":"alt_lang_url_params","label":"Alternate URL Parameters for Language","type":"string"}]</option_schema>
+        <public>true</public>
+        <roles/>
+        <script><![CDATA[(function($sp) {
+
+	options.alt_search_url_params = options.alt_search_url_params || "";
+
+	//Set keyword from url
+	data.keyword = "";
+	var keywordParm = $sp.getParameter('query') || "";
+
+	if(keywordParm == ""){
+		if(options.alt_search_url_params){
+			var qParams =  options.alt_search_url_params.toString().split(",");
+			qParams.forEach(function(key){
+				if($sp.getParameter(key))
+					keywordParm = $sp.getParameter(key);
+			});
+		}
+	}
+	
+	if(keywordParm)
+		data.keyword = keywordParm;
+
+	//set values based on options and properties.
+	//options will be given precedence if value exit
+	data.set_foccus = gs.getProperty('glide.knowman.portal_search_focus') == 'true' || false;
+	data.min_search_char = parseInt(options.min_search_char || gs.getProperty('glide.knowman.search_character_limit') || 3);
+	data.allow_instant_search = options.allow_instant_search ? (options.allow_instant_search == 'Use system property' ?  gs.getProperty('glide.knowman.search.instant_results') == 'true' : options.allow_instant_search == 'Yes') : gs.getProperty('glide.knowman.search.instant_results') == 'true' || false;
+	data.allow_empty_search = options.allow_empty_search ? (options.allow_empty_search == 'Use system property' ?  gs.getProperty('glide.knowman.allow_empty_search') == 'true' : options.allow_empty_search == 'Yes') : gs.getProperty('glide.knowman.allow_empty_search') == 'true' || false;
+	
+	options.search_wait = options.search_wait || 500;
+	options.title = options.title || gs.getMessage('Search (minimum {0} characters)',data.min_search_char+'');
+
+	var langOption = {};
+	langOption.alt_lang_url_params = options.alt_lang_url_params || "";
+	data.language_picker = $sp.getWidget("kb-language-picker",langOption);
+})($sp);]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2021-01-27 18:23:27</sys_created_on>
+        <sys_id>829d429c2f822010273ead2ef699b608</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>NeedIt Search</sys_name>
+        <sys_package display_value="NeedIt" source="x_58872_needit">6ead8e780f603200cd674f8ce1050ed1</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="NeedIt">6ead8e780f603200cd674f8ce1050ed1</sys_scope>
+        <sys_update_name>sp_widget_829d429c2f822010273ead2ef699b608</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2021-01-27 18:23:27</sys_updated_on>
+        <template><![CDATA[<div class="kb-search-block" ng-class="$root.showFacet? 'kb-search-display-none':''" ng-cloak>
+  <div class="search-bar col-md-5 col-xs-11 col-sm-7 no-pad">
+
+    <div ng-if="c.showLanguageIcon" class="visible-xs visible-sm lang-icon">
+      <span ng-click ="::c.showLanguageFacet()"><i class="fa fa-globe icon-padding" aria-hidden="true"></i></span>
+    </div>
+    <div class="pad-bottom">
+      <div class="input-group input-group-{{::c.options.size}}">
+        <input id="kb_search_input" name="q" type="text" ng-model="c.keyword" aria-label="{{::options.title}}"  placeholder="{{::options.title}}" class="form-control">
+        <span class="input-group-btn">
+          <button name="search" type="submit" aria-label="search" class="btn btn-{{::c.options.color}}" ng-click="c.keywordChanged('')">
+            <i ng-if="::c.options.glyph" class="fa fa-{{::c.options.glyph}}"></i>
+          </button>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="filter-icon-padding visible-xs visible-sm col-xs-1 col-sm-1">
+    <span class=" filter-icon" ng-click ="::c.toggleFacets()" ng-class="c.applycolor ? 'selected-filter-color' : 'filter-color'" tabindex="0" aria-label="Show filters"><i class="fa fa-filter filter-size" aria-hidden="true"></i>
+      <span class="check-position" ng-show="c.applycolor"><i class="fa fa-check float-left"  aria-hidden="true"></i></span></span>
+  </div>
+  
+  <!--
+ <div class="visible-xs visible-sm col-xs-1 col-sm-1 no-pad">
+    <div class="col-xs-11 col-sm-11 pad-bottom no-pad">
+-->
+  <div class="col-md-12">
+  <div class="hidden-xs hidden-sm filter-class">
+   <a href="javascript:void(0);" id="showFilterBtn"  ng-click="c.showAndHideFilters()"><i class="fa fa-list" aria-hidden="true"></i>
+    <span ng-show="c.showFiltersButton" class="filter-text">${Show filters}</span>
+    <span ng-show="!c.showFiltersButton" class="filter-text">${Hide filters}</span></a>
+  </div>
+  </div>
+  
+</div>
+<style>
+
+  @media only screen and (max-width: 991px) {
+    .kb-search-block {
+      padding-top : 7px !important;
+    }
+    .filter-icon-padding {
+      padding-left : 0px !important;
+      padding-right : 0px !important;
+      text-align : center;
+    }
+    .kb-search-display-none {
+      display :none !important;
+    }
+    .kb-search-block .lang-icon {
+      font-size : 18px;
+      float :left;
+      padding-right:9px;
+    }
+  }
+   @media only screen and (min-width:991px) {
+ 		.expand-width {
+    	width :100%;
+    }
+   	.hide-filters {
+    	display :none;
+    }
+    .original-width{
+    	width : 75%;
+    }
+    .show-filters {
+    	display:block;
+    }
+ }
+  
+</style>]]></template>
+    </sp_widget>
+</record_update>

@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_rel_widget_clone">
+    <sp_rel_widget_clone action="INSERT_OR_UPDATE">
+        <child display_value="NeedIt Search">829d429c2f822010273ead2ef699b608</child>
+        <cloned>2021-01-27 18:23:28</cloned>
+        <last_validated>2021-01-27 18:23:28</last_validated>
+        <parent display_value="Knowledge Search">6df47e71db12220099f93691f0b8f560</parent>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;sp_widget&gt;&lt;category/&gt;&lt;client_script&gt;&lt;![CDATA[function($rootScope,$window,$timeout,KnowledgeSearchService,$scope) {
+	var c = this;
+
+
+	
+	c.keyword = c.data.keyword || "";
+	c.oldKeyword = c.data.keyword || "";
+	c.options.glyph = c.options.glyph || 'search';
+	c.filterCount =0;
+	c.applycolor =false;
+	c.items =[];
+	c.showLanguageIcon = false;
+	if($rootScope.showLanguageIcon){
+		c.showLanguageIcon = $rootScope.showLanguageIcon;
+	}
+	var qry;
+
+	//Subscribe search element to service on load
+	if(KnowledgeSearchService){
+		var input = {};
+		input.element = "search";
+		input.alt_url_params = c.options.alt_search_url_params;
+		KnowledgeSearchService.subscribe(input);
+	}
+	var refreshSearchFilter = $rootScope.$on('sp.kb.refresh.filter',function (event,data){
+		if(data){
+			c.items = data;
+		}
+		if(c.items.length&gt;0){
+			c.filterCount = c.items.length;
+			c.applycolor = true;
+		}else{
+			c.filterCount = 0;
+			c.applycolor = false;
+		}
+	});
+
+
+	var refreshKeyword = $rootScope.$on('sp.kb.refresh.keyword',function(event,data){
+		if(data)
+			c.keyword = data.keyword;				 
+	});
+	
+	$scope.$on('$destroy',function(){
+		refreshSearchFilter();
+		refreshKeyword();
+	});
+	
+	
+	
+}]]&gt;&lt;/client_script&gt;&lt;controller_as&gt;c&lt;/controller_as&gt;&lt;css&gt;.kb-search-block{
+  padding : 8px 0px 10px 0px;
+}
+input[type='text']{
+  height: 2.4em;
+}
+button{
+  height: inherit;
+  font-size: 14px; 
+}
+.filter-icon{
+    display: inline-flex;
+    padding-top: 9px;
+  	padding-left:5px;
+}
+.filter-size{
+	font-size: 18px;
+}
+.selected-filter-color{
+	color :$link-color;
+}
+.filter-color{
+	color: $text-color;
+}
+.check-position {
+	  font-size: 10px;
+    padding-top: 6px;
+    margin-left: -5px;
+}
+.no-pad {
+	padding-left :0px !important;
+  padding-right : 0px !important;
+}
+.pad-bottom {
+	padding-bottom : 10px;
+}
+.icon-padding {
+ padding-top : 9px;
+ padding-right : 5px;
+}
+.filter-class{
+	padding-bottom: 9px;
+  padding-top: 3px;
+  font-size : 16px;
+}
+.filter-text{
+	padding-left :7px;
+}&lt;/css&gt;&lt;data_table&gt;sp_instance&lt;/data_table&gt;&lt;demo_data/&gt;&lt;description&gt;Knowledge Portal Search Widget&lt;/description&gt;&lt;docs/&gt;&lt;field_list&gt;title,glyph,color,size,css&lt;/field_list&gt;&lt;has_preview&gt;false&lt;/has_preview&gt;&lt;id&gt;kb-search&lt;/id&gt;&lt;internal&gt;false&lt;/internal&gt;&lt;link&gt;&lt;![CDATA[function(scope,element,attr){
+	if(scope.data.set_foccus)
+	setTimeout(function(){
+		element.find('#kb_search_input').focus();
+	},0);
+	
+	var c = scope.c;
+	$rootScope = $injector.get("$rootScope");
+	
+	c.showFiltersButton = true;
+	
+	c.showAndHideFilters = function(){
+		if(c.showFiltersButton==true){
+			$(".hide-filters").addClass("show-filters").removeClass("hide-filters");
+			$(".expand-width").addClass("original-width").removeClass("expand-width");
+			c.showFiltersButton = false;
+		}else{
+			$(".show-filters").addClass("hide-filters").removeClass("show-filters");
+			$(".original-width").addClass("expand-width").removeClass("original-width");
+			c.showFiltersButton = true;
+		}
+	}
+	
+	c.hideFilters = function(){
+	  $(".show-filters").addClass("hide-filters").removeClass("show-filters");
+		$(".original-width").addClass("expand-width").removeClass("original-width");
+		c.showFiltersButton = true;
+	}
+	
+	c.toggleFacets = function(){
+		$rootScope.showFacet = !$rootScope.showFacet;
+		$rootScope.showLanguageFacet = false;
+	}
+	
+	c.showLanguageFacet = function(){
+		$rootScope.showFacet = !$rootScope.showFacet;
+		$rootScope.showLanguageFacet = true;
+	}
+	
+	c.keywordChanged = function(event){
+		c.keyword = c.keyword.trim();
+
+		if(c.keyword != c.oldKeyword){
+			//handle keyboard events for enter and keyup
+			if(event){
+				var keycode = (event.keyCode ? event.keyCode : event.which);
+				if(!c.data.allow_instant_search &amp;&amp; keycode != 13)
+					return;
+			}
+
+			//throw update event based on options			
+			if( (c.data.allow_empty_search &amp;&amp; c.keyword == "") || (c.keyword &amp;&amp; c.keyword.length &gt;= c.data.min_search_char)){
+				$rootScope.$emit('sp.kb.updated.keyword',{'keyword':c.keyword});
+				c.hideFilters();
+			}
+
+			c.oldKeyword = angular.copy(c.keyword);
+		}
+
+		scope.$evalAsync(function(){
+			if($("#kb_search_input"))
+				$("#kb_search_input").focus();
+		});
+	};
+
+	//If instant search enable then wait for 200ms for the next input then throw event
+	$("#kb_search_input").keyup(_.debounce(function(event){
+		c.keywordChanged(event);
+	},c.options.search_wait));
+
+	$(window).resize(function() {
+		var width1 = $(window).width();
+		if(width1&lt;=992 &amp;&amp; !$rootScope.isMobile){
+			$rootScope.isMobile = true;
+		}else if(width1&gt;992 &amp;&amp; $rootScope.isMobile ){
+			$rootScope.showFacet = false;
+			$rootScope.isMobile = false;
+		}
+	});
+	
+	//set keyword onload from url and throw event
+	if(c.data.keyword){
+		c.keyword = c.data.keyword;
+		c.keywordChanged();
+	}
+}]]&gt;&lt;/link&gt;&lt;name&gt;Knowledge Search&lt;/name&gt;&lt;option_schema&gt;[{"hint":"Allow search with empty or blank string in search box (Default to system property : glide.knowman.allow_empty_search)","name":"allow_empty_search","default_value":"Use system property","label":"Allow Empty Search","type":"choice","choices":[{"label":"Yes","value":"Yes"},{"label":"No","value":"No"},{"label":"Use system property","value":"Use system property"}]},{"hint":"Allow search on typeahead (Default to system property : glide.knowman.search.instant_results)","name":"allow_instant_search","default_value":"Use system property","label":"Allow Instant Search On Keypress","type":"choice","choices":[{"label":"Yes","value":"Yes"},{"label":"No","value":"No"},{"label":"Use system property","value":"Use system property"}]},{"hint":"Minimum number of characters for search (Default to system property : glide.knowman.search_character_limit)","name":"min_search_char","default_value":"","label":"Minimum Number of Characters for Search","type":"string"},{"hint":"Wait time between searches, if typeahead search is enabled","name":"search_wait","default_value":"500","label":"Wait time(ms) between searches, if instant search is enabled","type":"integer"},{"hint":"Comma separated list of alternate URL parameters for Search input (Default is only query)","name":"alt_search_url_params","label":"Alternate URL Parameters for Search","type":"string"},{"hint":"Comma separated list of alternate URL parameters for language input (Default is only language)","name":"alt_lang_url_params","label":"Alternate URL Parameters for Language","type":"string"}]&lt;/option_schema&gt;&lt;public&gt;true&lt;/public&gt;&lt;roles/&gt;&lt;script&gt;&lt;![CDATA[(function($sp) {
+
+	options.alt_search_url_params = options.alt_search_url_params || "";
+
+	//Set keyword from url
+	data.keyword = "";
+	var keywordParm = $sp.getParameter('query') || "";
+
+	if(keywordParm == ""){
+		if(options.alt_search_url_params){
+			var qParams =  options.alt_search_url_params.toString().split(",");
+			qParams.forEach(function(key){
+				if($sp.getParameter(key))
+					keywordParm = $sp.getParameter(key);
+			});
+		}
+	}
+	
+	if(keywordParm)
+		data.keyword = keywordParm;
+
+	//set values based on options and properties.
+	//options will be given precedence if value exit
+	data.set_foccus = gs.getProperty('glide.knowman.portal_search_focus') == 'true' || false;
+	data.min_search_char = parseInt(options.min_search_char || gs.getProperty('glide.knowman.search_character_limit') || 3);
+	data.allow_instant_search = options.allow_instant_search ? (options.allow_instant_search == 'Use system property' ?  gs.getProperty('glide.knowman.search.instant_results') == 'true' : options.allow_instant_search == 'Yes') : gs.getProperty('glide.knowman.search.instant_results') == 'true' || false;
+	data.allow_empty_search = options.allow_empty_search ? (options.allow_empty_search == 'Use system property' ?  gs.getProperty('glide.knowman.allow_empty_search') == 'true' : options.allow_empty_search == 'Yes') : gs.getProperty('glide.knowman.allow_empty_search') == 'true' || false;
+	
+	options.search_wait = options.search_wait || 500;
+	options.title = options.title || gs.getMessage('Search (minimum {0} characters)',data.min_search_char+'');
+
+	var langOption = {};
+	langOption.alt_lang_url_params = options.alt_lang_url_params || "";
+	data.language_picker = $sp.getWidget("kb-language-picker",langOption);
+})($sp);]]&gt;&lt;/script&gt;&lt;servicenow&gt;true&lt;/servicenow&gt;&lt;sys_class_name&gt;sp_widget&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2016-10-07 05:56:11&lt;/sys_created_on&gt;&lt;sys_id&gt;6df47e71db12220099f93691f0b8f560&lt;/sys_id&gt;&lt;sys_mod_count&gt;26&lt;/sys_mod_count&gt;&lt;sys_name&gt;Knowledge Search&lt;/sys_name&gt;&lt;sys_package display_value="Knowledge Management - Service Portal" source="sn_km_portal"&gt;bab6dea3db20320099f93691f0b8f590&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="Knowledge Management - Service Portal"&gt;bab6dea3db20320099f93691f0b8f590&lt;/sys_scope&gt;&lt;sys_update_name&gt;sp_widget_6df47e71db12220099f93691f0b8f560&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2020-11-24 06:33:41&lt;/sys_updated_on&gt;&lt;template&gt;&lt;![CDATA[&lt;div class="kb-search-block" ng-class="$root.showFacet? 'kb-search-display-none':''" ng-cloak&gt;
+  &lt;div class="search-bar col-md-5 col-xs-11 col-sm-7 no-pad"&gt;
+
+    &lt;div ng-if="c.showLanguageIcon" class="visible-xs visible-sm lang-icon"&gt;
+      &lt;span ng-click ="::c.showLanguageFacet()"&gt;&lt;i class="fa fa-globe icon-padding" aria-hidden="true"&gt;&lt;/i&gt;&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class="pad-bottom"&gt;
+      &lt;div class="input-group input-group-{{::c.options.size}}"&gt;
+        &lt;input id="kb_search_input" name="q" type="text" ng-model="c.keyword" aria-label="{{::options.title}}"  placeholder="{{::options.title}}" class="form-control"&gt;
+        &lt;span class="input-group-btn"&gt;
+          &lt;button name="search" type="submit" aria-label="search" class="btn btn-{{::c.options.color}}" ng-click="c.keywordChanged('')"&gt;
+            &lt;i ng-if="::c.options.glyph" class="fa fa-{{::c.options.glyph}}"&gt;&lt;/i&gt;
+          &lt;/button&gt;
+        &lt;/span&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="filter-icon-padding visible-xs visible-sm col-xs-1 col-sm-1"&gt;
+    &lt;span class=" filter-icon" ng-click ="::c.toggleFacets()" ng-class="c.applycolor ? 'selected-filter-color' : 'filter-color'" tabindex="0" aria-label="Show filters"&gt;&lt;i class="fa fa-filter filter-size" aria-hidden="true"&gt;&lt;/i&gt;
+      &lt;span class="check-position" ng-show="c.applycolor"&gt;&lt;i class="fa fa-check float-left"  aria-hidden="true"&gt;&lt;/i&gt;&lt;/span&gt;&lt;/span&gt;
+  &lt;/div&gt;
+  
+  &lt;!--
+ &lt;div class="visible-xs visible-sm col-xs-1 col-sm-1 no-pad"&gt;
+    &lt;div class="col-xs-11 col-sm-11 pad-bottom no-pad"&gt;
+--&gt;
+  &lt;div class="col-md-12"&gt;
+  &lt;div class="hidden-xs hidden-sm filter-class"&gt;
+   &lt;a href="javascript:void(0);" id="showFilterBtn"  ng-click="c.showAndHideFilters()"&gt;&lt;i class="fa fa-list" aria-hidden="true"&gt;&lt;/i&gt;
+    &lt;span ng-show="c.showFiltersButton" class="filter-text"&gt;${Show filters}&lt;/span&gt;
+    &lt;span ng-show="!c.showFiltersButton" class="filter-text"&gt;${Hide filters}&lt;/span&gt;&lt;/a&gt;
+  &lt;/div&gt;
+  &lt;/div&gt;
+  
+&lt;/div&gt;
+&lt;style&gt;
+
+  @media only screen and (max-width: 991px) {
+    .kb-search-block {
+      padding-top : 7px !important;
+    }
+    .filter-icon-padding {
+      padding-left : 0px !important;
+      padding-right : 0px !important;
+      text-align : center;
+    }
+    .kb-search-display-none {
+      display :none !important;
+    }
+    .kb-search-block .lang-icon {
+      font-size : 18px;
+      float :left;
+      padding-right:9px;
+    }
+  }
+   @media only screen and (min-width:991px) {
+ 		.expand-width {
+    	width :100%;
+    }
+   	.hide-filters {
+    	display :none;
+    }
+    .original-width{
+    	width : 75%;
+    }
+    .show-filters {
+    	display:block;
+    }
+ }
+  
+&lt;/style&gt;]]&gt;&lt;/template&gt;&lt;/sp_widget&gt;</payload>
+        <sys_class_name>sp_rel_widget_clone</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2021-01-27 18:23:28</sys_created_on>
+        <sys_id>029d429c2f822010273ead2ef699b60f</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>829d429c2f822010273ead2ef699b608</sys_name>
+        <sys_package display_value="NeedIt" source="x_58872_needit">6ead8e780f603200cd674f8ce1050ed1</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="NeedIt">6ead8e780f603200cd674f8ce1050ed1</sys_scope>
+        <sys_update_name>sp_rel_widget_clone_029d429c2f822010273ead2ef699b60f</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2021-01-27 18:23:28</sys_updated_on>
+    </sp_rel_widget_clone>
+</record_update>
